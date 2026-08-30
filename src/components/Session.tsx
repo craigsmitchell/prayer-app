@@ -11,7 +11,13 @@ function ago(ts?: number): string {
   return `prayed ${days} days ago`
 }
 
-export default function Session({ onDone }: { onDone: () => void }) {
+export default function Session({
+  onDone,
+  at,
+}: {
+  onDone: () => void
+  at?: number
+}) {
   const [hand, setHand] = useState<PrayerItem[] | null>(null)
   const [idx, setIdx] = useState(0)
   const [prayedCount, setPrayedCount] = useState(0)
@@ -82,9 +88,11 @@ export default function Session({ onDone }: { onDone: () => void }) {
   const item = hand[idx]
 
   const markPrayed = async () => {
-    const now = Date.now()
-    await db.prayerLogs.add({ itemId: item.id, prayedAt: now })
-    await db.prayerItems.update(item.id, { lastPrayedAt: now })
+    const when = at ?? Date.now()
+    await db.prayerLogs.add({ itemId: item.id, prayedAt: when })
+    if (!item.lastPrayedAt || when > item.lastPrayedAt) {
+      await db.prayerItems.update(item.id, { lastPrayedAt: when })
+    }
     setPrayedCount((c) => c + 1)
     setIdx((i) => i + 1)
   }

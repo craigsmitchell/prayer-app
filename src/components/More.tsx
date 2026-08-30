@@ -5,6 +5,7 @@ import {
   type PrayerItem,
   type PrayerLog,
   type ReadingLog,
+  type ReadingSession,
   type Scripture,
   type Setting,
 } from '../db'
@@ -15,6 +16,7 @@ interface Backup {
   prayerLogs: PrayerLog[]
   scriptures: Scripture[]
   readingLogs?: ReadingLog[]
+  readingSessions?: ReadingSession[]
   settings?: Setting[]
 }
 
@@ -33,6 +35,7 @@ export default function More() {
       prayerLogs: await db.prayerLogs.toArray(),
       scriptures: await db.scriptures.toArray(),
       readingLogs: await db.readingLogs.toArray(),
+      readingSessions: await db.readingSessions.toArray(),
       settings: await db.settings.toArray(),
     }
     const json = JSON.stringify(data, null, 2)
@@ -53,6 +56,7 @@ export default function More() {
       await db.prayerLogs.bulkPut(data.prayerLogs ?? [])
       await db.scriptures.bulkPut(data.scriptures ?? [])
       await db.readingLogs.bulkPut(data.readingLogs ?? [])
+      await db.readingSessions.bulkPut(data.readingSessions ?? [])
       await db.settings.bulkPut(data.settings ?? [])
       setStatus(
         `Imported ${data.prayerItems?.length ?? 0} prayers, ` +

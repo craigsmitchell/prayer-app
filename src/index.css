@@ -55,6 +55,7 @@ textarea,
 select,
 input[type='text'],
 input[type='number'],
+input[type='date'],
 input:not([type]) {
   width: 100%;
   padding: 12px;
@@ -107,7 +108,10 @@ input:focus {
   font-size: 0.85rem !important;
 }
 
-button.primary {
+button.primary,
+a.primary {
+  display: block;
+  box-sizing: border-box;
   width: 100%;
   padding: 14px;
   margin-top: 4px;
@@ -118,6 +122,8 @@ button.primary {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+  text-align: center;
+  text-decoration: none;
 }
 
 button.primary:disabled {
@@ -342,4 +348,55 @@ button.primary:disabled {
 .actions.center {
   justify-content: center;
   margin-top: 12px;
+}
+
+.setup-row.spaced {
+  margin-top: 14px;
+  margin-bottom: 0;
+  align-items: center;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  margin: 10px 0;
+  white-space: nowrap;
+}
+
+.check input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.minutes-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.minutes-input {
+  max-width: 90px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0 14px;
+  font-size: 0.9rem;
+}
+
+.stepper button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
 }

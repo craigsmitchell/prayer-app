@@ -36,6 +36,14 @@ export interface ReadingLog {
   readAt: number
 }
 
+export interface ReadingSession {
+  id: number
+  dateKey: string
+  minutes: number
+  meditated: boolean
+  startedAt: number
+}
+
 export interface Setting {
   key: string
   value: unknown
@@ -46,6 +54,7 @@ export const db = new Dexie('prayer-app') as Dexie & {
   prayerLogs: EntityTable<PrayerLog, 'id'>
   scriptures: EntityTable<Scripture, 'id'>
   readingLogs: EntityTable<ReadingLog, 'id'>
+  readingSessions: EntityTable<ReadingSession, 'id'>
   settings: EntityTable<Setting, 'key'>
 }
 
@@ -60,5 +69,14 @@ db.version(2).stores({
   prayerLogs: '++id, itemId, prayedAt',
   scriptures: '++id, addedAt',
   readingLogs: '++id, dateKey, readAt',
+  settings: '&key',
+})
+
+db.version(3).stores({
+  prayerItems: '++id, status, createdAt, lastPrayedAt',
+  prayerLogs: '++id, itemId, prayedAt',
+  scriptures: '++id, addedAt',
+  readingLogs: '++id, dateKey, readAt',
+  readingSessions: '++id, dateKey, startedAt',
   settings: '&key',
 })

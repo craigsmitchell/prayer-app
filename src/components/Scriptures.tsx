@@ -25,13 +25,13 @@ export default function Scriptures({
     }
   }, [sharedLink, onSharedConsumed])
 
-  const add = async () => {
-    const parsed = parseScriptureLink(input.trim())
+  const addFrom = async (text: string) => {
+    const parsed = parseScriptureLink(text.trim())
     if (!parsed) {
       setError(
         "Couldn't read that — paste a scripture share link from JW Library or wol.jw.org.",
       )
-      return
+      return false
     }
     await db.scriptures.add({
       ...parsed,
@@ -42,6 +42,25 @@ export default function Scriptures({
     setInput('')
     setNote('')
     setError('')
+    return true
+  }
+
+  const add = () => addFrom(input)
+
+  // In JW Library: tap the verse → Share → Copy, then hit this button.
+  const pasteAndAdd = async () => {
+    let text = ''
+    try {
+      text = await navigator.clipboard.readText()
+    } catch {
+      setError("Couldn't read the clipboard — paste the link manually above.")
+      return
+    }
+    if (!text.trim()) {
+      setError('The clipboard is empty — copy a share link first.')
+      return
+    }
+    if (!(await addFrom(text))) setInput(text)
   }
 
   return (
@@ -61,16 +80,22 @@ export default function Scriptures({
           placeholder="Why it matters to you (optional)"
           onChange={(e) => setNote(e.target.value)}
         />
-        <button className="primary" onClick={add} disabled={!input.trim()}>
-          Add
-        </button>
+        {input.trim() ? (
+          <button className="primary" onClick={add}>
+            Add
+          </button>
+        ) : (
+          <button className="primary" onClick={pasteAndAdd}>
+            📋 Paste from clipboard
+          </button>
+        )}
         {error && <p className="error">{error}</p>}
       </div>
 
       {scriptures.length === 0 && !error && (
         <p className="empty">
-          In JW Library, tap a verse → Share → copy the link, then paste it
-          here.
+          In JW Library: tap a verse → Share → Copy, then come back and hit
+          Paste.
         </p>
       )}
 

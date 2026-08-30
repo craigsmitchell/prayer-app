@@ -1,7 +1,10 @@
 import { chromium } from 'playwright'
 
 const browser = await chromium.launch()
-const page = await browser.newPage()
+const context = await browser.newContext({
+  permissions: ['clipboard-read', 'clipboard-write'],
+})
+const page = await context.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message))
 page.on('console', (m) => {
@@ -69,6 +72,20 @@ console.log(
   list.includes('Psalms 40:1-3') ? 'yes (Psalms 40:1-3)' : 'NO — ' + JSON.stringify(list.slice(0, 300)),
 )
 
+// clipboard flow: JW Library share → Copy → paste button
+await page.evaluate(() =>
+  navigator.clipboard.writeText(
+    'https://www.jw.org/finder?srcid=jwlshare&wtlocale=E&prefer=lang&bible=28014001&pub=nwtsty',
+  ),
+)
+await page.click('button:text-is("📋 Paste from clipboard")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'PASTE ADD:',
+  list.includes('Hosea 14:1') ? 'yes (Hosea 14:1)' : 'NO — ' + JSON.stringify(list.slice(0, 300)),
+)
+
 // reading plan: defaults (Genesis 1, 3/day), mark today's portion read
 await page.click('.tab:has-text("Today")')
 await page.click('button:text-is("Start plan")')
@@ -78,7 +95,7 @@ console.log(
   'PLAN SET:',
   list.includes('Genesis 1-3') ? 'yes (Genesis 1-3)' : 'NO — ' + JSON.stringify(list.slice(0, 300)),
 )
-await page.click('button:text-is("Mark read")')
+await page.click('button:text-is("Mark read (no timer)")')
 await page.waitForTimeout(300)
 list = await page.evaluate(() => document.body.innerText)
 console.log(
@@ -87,6 +104,34 @@ console.log(
     list.includes('3 chapters read today') &&
     list.includes('📖 1-day')
     ? 'yes (advanced to Genesis 4-6, streak 1)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 400)),
+)
+
+// switch the plan to a minutes/day goal and run a timed reading session
+await page.click('button:text-is("Adjust")')
+await page.selectOption('.sel-goaltype', 'minutes')
+await page.click('button:text-is("Start plan")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'MINUTES MODE:',
+  list.includes('Continue from') &&
+    list.includes('Genesis 4') &&
+    list.includes('Goal: 15 min/day')
+    ? 'yes (continue from Genesis 4)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 400)),
+)
+await page.click('a:has-text("Start reading")')
+await page.waitForTimeout(500)
+await page.fill('.minutes-input', '17')
+await page.check('.check input[type="checkbox"]')
+await page.click('button:text-is("Save reading")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'TIMED READING:',
+  list.includes('17 min today ✓')
+    ? 'yes (17 min + meditation logged)'
     : 'NO — ' + JSON.stringify(list.slice(0, 400)),
 )
 
@@ -115,7 +160,7 @@ console.log(
   'SESSION COMPLETE:',
   list.includes('Session complete') &&
     list.includes('prayed over 2') &&
-    list.includes('Psalms 40:1-3')
+    list.includes('A favorite scripture for today')
     ? 'yes (2 items + favorite scripture shown)'
     : 'NO — ' + JSON.stringify(list.slice(0, 400)),
 )
