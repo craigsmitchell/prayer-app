@@ -24,6 +24,7 @@ export interface Scripture {
   verseStart?: number
   verseEnd?: number
   note?: string
+  tags?: string[]
   url: string
   addedAt: number
 }

@@ -1,7 +1,45 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db'
+import { db, type Scripture } from '../db'
 import { finderUrl, formatRef, parseScriptureLink } from '../bible'
+
+function TagPicker({
+  choices,
+  selected,
+  onToggle,
+  newTag,
+  onNewTagChange,
+  onNewTagCommit,
+}: {
+  choices: string[]
+  selected: string[]
+  onToggle: (t: string) => void
+  newTag: string
+  onNewTagChange: (v: string) => void
+  onNewTagCommit: () => void
+}) {
+  return (
+    <div className="chips small">
+      {choices.map((t) => (
+        <button
+          key={t}
+          className={selected.includes(t) ? 'chip on' : 'chip'}
+          onClick={() => onToggle(t)}
+        >
+          {t}
+        </button>
+      ))}
+      <input
+        className="newtag"
+        value={newTag}
+        placeholder="+ tag"
+        onChange={(e) => onNewTagChange(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && onNewTagCommit()}
+        onBlur={onNewTagCommit}
+      />
+    </div>
+  )
+}
 
 export default function Scriptures({
   sharedLink,
@@ -12,11 +50,24 @@ export default function Scriptures({
 }) {
   const [input, setInput] = useState('')
   const [note, setNote] = useState('')
+  const [selected, setSelected] = useState<string[]>([])
+  const [newTag, setNewTag] = useState('')
+  const [filter, setFilter] = useState<string[]>([])
   const [error, setError] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editNote, setEditNote] = useState('')
+  const [editTags, setEditTags] = useState<string[]>([])
+  const [editNewTag, setEditNewTag] = useState('')
 
   const scriptures =
     useLiveQuery(() => db.scriptures.orderBy('addedAt').reverse().toArray(), []) ??
     []
+
+  // Scripture tags are their own namespace — derived only from scriptures,
+  // never from prayer items.
+  const existingTags = [
+    ...new Set(scriptures.flatMap((s) => s.tags ?? [])),
+  ].sort()
 
   useEffect(() => {
     if (sharedLink) {
@@ -24,6 +75,21 @@ export default function Scriptures({
       onSharedConsumed()
     }
   }, [sharedLink, onSharedConsumed])
+
+  const toggleIn = (list: string[], t: string) =>
+    list.includes(t) ? list.filter((x) => x !== t) : [...list, t]
+
+  const commitNewTag = () => {
+    const t = newTag.trim()
+    if (t && !selected.includes(t)) setSelected((s) => [...s, t])
+    setNewTag('')
+  }
+
+  const commitEditNewTag = () => {
+    const t = editNewTag.trim()
+    if (t && !editTags.includes(t)) setEditTags((s) => [...s, t])
+    setEditNewTag('')
+  }
 
   const addFrom = async (text: string) => {
     const parsed = parseScriptureLink(text.trim())
@@ -36,11 +102,13 @@ export default function Scriptures({
     await db.scriptures.add({
       ...parsed,
       note: note.trim() || undefined,
+      tags: selected,
       url: finderUrl(parsed),
       addedAt: Date.now(),
     })
     setInput('')
     setNote('')
+    setSelected([])
     setError('')
     return true
   }
@@ -63,6 +131,26 @@ export default function Scriptures({
     if (!(await addFrom(text))) setInput(text)
   }
 
+  const startEdit = (s: Scripture) => {
+    setEditingId(s.id)
+    setEditNote(s.note ?? '')
+    setEditTags(s.tags ?? [])
+    setEditNewTag('')
+  }
+
+  const saveEdit = async () => {
+    if (editingId === null) return
+    await db.scriptures.update(editingId, {
+      note: editNote.trim() || undefined,
+      tags: editTags,
+    })
+    setEditingId(null)
+  }
+
+  const visible = filter.length
+    ? scriptures.filter((s) => filter.some((t) => (s.tags ?? []).includes(t)))
+    : scriptures
+
   return (
     <div className="screen">
       <h1>Favorite scriptures</h1>
@@ -79,6 +167,14 @@ export default function Scriptures({
           value={note}
           placeholder="Why it matters to you (optional)"
           onChange={(e) => setNote(e.target.value)}
+        />
+        <TagPicker
+          choices={[...new Set([...existingTags, ...selected])].sort()}
+          selected={selected}
+          onToggle={(t) => setSelected((s) => toggleIn(s, t))}
+          newTag={newTag}
+          onNewTagChange={setNewTag}
+          onNewTagCommit={commitNewTag}
         />
         {input.trim() ? (
           <button className="primary" onClick={add}>
@@ -99,22 +195,81 @@ export default function Scriptures({
         </p>
       )}
 
+      {existingTags.length > 0 && (
+        <div className="chips filterbar">
+          <button
+            className={filter.length === 0 ? 'chip on' : 'chip'}
+            onClick={() => setFilter([])}
+          >
+            All
+          </button>
+          {existingTags.map((t) => (
+            <button
+              key={t}
+              className={filter.includes(t) ? 'chip on' : 'chip'}
+              onClick={() => setFilter((f) => toggleIn(f, t))}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {visible.length === 0 && filter.length > 0 && (
+        <p className="empty">No scriptures with that tag.</p>
+      )}
+
       <ul className="cards">
-        {scriptures.map((s) => (
+        {visible.map((s) => (
           <li key={s.id} className="card">
             <p className="card-text ref">{formatRef(s)}</p>
-            {s.note && <p className="card-meta">{s.note}</p>}
-            <div className="actions">
-              <a className="act linkbtn" href={s.url} target="_blank" rel="noreferrer">
-                Open in JW Library
-              </a>
-              <button
-                className="danger"
-                onClick={() => db.scriptures.delete(s.id)}
-              >
-                Delete
-              </button>
-            </div>
+            {editingId === s.id ? (
+              <div className="editbox">
+                <input
+                  value={editNote}
+                  placeholder="Why it matters to you (optional)"
+                  onChange={(e) => setEditNote(e.target.value)}
+                />
+                <TagPicker
+                  choices={[...new Set([...existingTags, ...editTags])].sort()}
+                  selected={editTags}
+                  onToggle={(t) => setEditTags((s2) => toggleIn(s2, t))}
+                  newTag={editNewTag}
+                  onNewTagChange={setEditNewTag}
+                  onNewTagCommit={commitEditNewTag}
+                />
+                <div className="actions">
+                  <button className="act" onClick={saveEdit}>
+                    Save
+                  </button>
+                  <button onClick={() => setEditingId(null)}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {(s.tags?.length ?? 0) > 0 && (
+                  <p className="card-tags">{s.tags?.join(' · ')}</p>
+                )}
+                {s.note && <p className="card-meta">{s.note}</p>}
+                <div className="actions">
+                  <a
+                    className="act linkbtn"
+                    href={s.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open in JW Library
+                  </a>
+                  <button onClick={() => startEdit(s)}>Edit</button>
+                  <button
+                    className="danger"
+                    onClick={() => db.scriptures.delete(s.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>

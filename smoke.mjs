@@ -86,6 +86,34 @@ console.log(
   list.includes('Hosea 14:1') ? 'yes (Hosea 14:1)' : 'NO — ' + JSON.stringify(list.slice(0, 300)),
 )
 
+// edit a saved scripture: add the note + a tag after the fact, then filter
+await page.click('.card:has-text("Hosea 14:1") button:text-is("Edit")')
+await page.fill('.editbox input[placeholder^="Why"]', 'Return to Jehovah')
+await page.fill('.editbox .newtag', 'comfort')
+await page.keyboard.press('Enter')
+await page.click('.editbox button:text-is("Save")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'SCRIPTURE EDIT:',
+  list.includes('Return to Jehovah') && list.includes('comfort')
+    ? 'yes (note + tag added after save)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 300)),
+)
+await page.click('.filterbar .chip:text-is("comfort")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+const filteredOk = list.includes('Hosea 14:1') && !list.includes('Psalms 40:1-3')
+await page.click('.filterbar .chip:text-is("All")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'TAG FILTER:',
+  filteredOk && list.includes('Psalms 40:1-3')
+    ? 'yes (comfort → Hosea only, All → both)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 300)),
+)
+
 // reading plan: defaults (Genesis 1, 3/day), mark today's portion read
 await page.click('.tab:has-text("Today")')
 await page.click('button:text-is("Start plan")')
