@@ -11,6 +11,8 @@
   --hm-empty: #edebe6;
   --hm-pray: #6366f1;
   --hm-read: #0d9488;
+  --warn-bg: #fdf3d7;
+  --warn-border: #e7cf8c;
   color-scheme: light dark;
 }
 
@@ -25,6 +27,8 @@
     --border: #2c303a;
     --danger: #f87171;
     --hm-empty: #2a2e38;
+    --warn-bg: #33290f;
+    --warn-border: #5c4d20;
   }
 }
 
@@ -228,6 +232,30 @@ button.primary:disabled {
 .error {
   color: var(--danger);
   font-size: 0.9rem;
+}
+
+.banner {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.banner p {
+  margin: 0 0 8px;
+}
+
+.banner button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--warn-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .addbox {

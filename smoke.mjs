@@ -237,5 +237,34 @@ console.log(
 )
 await page.screenshot({ path: 'smoke-trends.png', fullPage: true })
 
+// browser-tab warning: shows on an iOS user agent outside standalone mode,
+// dismissible; must NOT have shown in the desktop context above
+const nudgeAbsentOnDesktop = !(
+  await page.evaluate(() => document.body.innerText)
+).includes('Add to Home Screen')
+const iphone = await browser.newContext({
+  userAgent:
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+  viewport: { width: 390, height: 844 },
+})
+const ipage = await iphone.newPage()
+await ipage.goto('http://localhost:4173/prayer-app/', {
+  waitUntil: 'networkidle',
+  timeout: 20000,
+})
+await ipage.waitForTimeout(600)
+let itext = await ipage.evaluate(() => document.body.innerText)
+const nudgeShown = itext.includes('Add to Home Screen')
+await ipage.click('.banner button:text-is("Got it")')
+await ipage.waitForTimeout(200)
+itext = await ipage.evaluate(() => document.body.innerText)
+console.log(
+  'INSTALL NUDGE:',
+  nudgeAbsentOnDesktop && nudgeShown && !itext.includes('Add to Home Screen')
+    ? 'yes (iOS browser tab only, dismissible)'
+    : `NO — desktopClean=${nudgeAbsentOnDesktop} shown=${nudgeShown}`,
+)
+await iphone.close()
+
 console.log('ERRORS:', errors.length ? errors.join('\n') : 'none')
 await browser.close()
