@@ -165,5 +165,49 @@ console.log(
     : 'NO — ' + JSON.stringify(list.slice(0, 400)),
 )
 
+// trends: today's heatmap cell should show both habits, tiles should add up
+await page.click('button:text-is("Done")')
+await page.waitForTimeout(300)
+await page.click('.tab:has-text("Trends")')
+await page.waitForTimeout(400)
+const todayKey = await page.evaluate(() => {
+  const d = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+})
+const cellCls = await page.getAttribute(`.hm-cell[data-date="${todayKey}"]`, 'class')
+console.log(
+  'HEATMAP CELL:',
+  cellCls?.includes('hm-both') && cellCls?.includes('hm-sel')
+    ? 'yes (today = prayed + read, selected)'
+    : 'NO — ' + cellCls,
+)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'DAY DETAIL:',
+  list.includes('prayed ×3') &&
+    list.includes('3 chapters') &&
+    list.includes('17 min') &&
+    list.includes('meditated')
+    ? 'yes (prayed ×3 · 3 chapters · 17 min · meditated)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 400)),
+)
+const chaptersStat = await page
+  .locator('.bigstat:has-text("Chapters") .bigstat-value')
+  .innerText()
+const minutesStat = await page
+  .locator('.bigstat:has-text("Minutes") .bigstat-value')
+  .innerText()
+const answeredStat = await page
+  .locator('.bigstat:has-text("Answered") .bigstat-value')
+  .innerText()
+console.log(
+  'TREND STATS:',
+  chaptersStat === '3' && minutesStat === '17' && answeredStat === '1'
+    ? 'yes (3 chapters, 17 min, 1 answered)'
+    : `NO — chapters=${chaptersStat} minutes=${minutesStat} answered=${answeredStat}`,
+)
+await page.screenshot({ path: 'smoke-trends.png', fullPage: true })
+
 console.log('ERRORS:', errors.length ? errors.join('\n') : 'none')
 await browser.close()

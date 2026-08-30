@@ -114,12 +114,6 @@ export default function More() {
         </select>
       </section>
 
-      <section className="section">
-        <h2>Coming next</h2>
-        <ul className="roadmap">
-          <li>Trends — calendar heatmap of prayer & reading</li>
-        </ul>
-      </section>
     </div>
   )
 }

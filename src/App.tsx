@@ -3,15 +3,17 @@ import Capture from './components/Capture'
 import Today from './components/Today'
 import Prayers from './components/Prayers'
 import Scriptures from './components/Scriptures'
+import Trends from './components/Trends'
 import More from './components/More'
 
-type Tab = 'capture' | 'today' | 'prayers' | 'scriptures' | 'more'
+type Tab = 'capture' | 'today' | 'prayers' | 'scriptures' | 'trends' | 'more'
 
 const TABS: [Tab, string, string][] = [
   ['capture', '✏️', 'Capture'],
   ['today', '📅', 'Today'],
   ['prayers', '🙏', 'Prayers'],
   ['scriptures', '📖', 'Scriptures'],
+  ['trends', '📊', 'Trends'],
   ['more', '⚙️', 'More'],
 ]
 
@@ -43,6 +45,7 @@ export default function App() {
             onSharedConsumed={() => setSharedLink(null)}
           />
         )}
+        {tab === 'trends' && <Trends />}
         {tab === 'more' && <More />}
       </main>
       <nav className="tabbar">
