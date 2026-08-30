@@ -69,5 +69,56 @@ console.log(
   list.includes('Psalms 40:1-3') ? 'yes (Psalms 40:1-3)' : 'NO — ' + JSON.stringify(list.slice(0, 300)),
 )
 
+// reading plan: defaults (Genesis 1, 3/day), mark today's portion read
+await page.click('.tab:has-text("Today")')
+await page.click('button:text-is("Start plan")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'PLAN SET:',
+  list.includes('Genesis 1-3') ? 'yes (Genesis 1-3)' : 'NO — ' + JSON.stringify(list.slice(0, 300)),
+)
+await page.click('button:text-is("Mark read")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'READ LOGGED:',
+  list.includes('Genesis 4-6') &&
+    list.includes('3 chapters read today') &&
+    list.includes('📖 1-day')
+    ? 'yes (advanced to Genesis 4-6, streak 1)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 400)),
+)
+
+// session: capture two items, deal a hand, pray through it
+await page.click('.tab:has-text("Capture")')
+await page.fill('textarea', 'Item A')
+await page.click('button.primary')
+await page.waitForTimeout(300)
+await page.fill('textarea', 'Item B')
+await page.click('button.primary')
+await page.waitForTimeout(300)
+await page.click('.tab:has-text("Today")')
+await page.click('button:text-is("Start prayer session")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'SESSION START:',
+  list.includes('1 of 2') ? 'yes (1 of 2)' : 'NO — ' + JSON.stringify(list.slice(0, 300)),
+)
+await page.click('button:text-is("🙏 Prayed")')
+await page.waitForTimeout(200)
+await page.click('button:text-is("🙏 Prayed")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'SESSION COMPLETE:',
+  list.includes('Session complete') &&
+    list.includes('prayed over 2') &&
+    list.includes('Psalms 40:1-3')
+    ? 'yes (2 items + favorite scripture shown)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 400)),
+)
+
 console.log('ERRORS:', errors.length ? errors.join('\n') : 'none')
 await browser.close()

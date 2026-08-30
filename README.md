@@ -3,18 +3,20 @@
 A personal, offline-first PWA for prayer and Bible reading:
 
 - **Capture** — jot down prayer thoughts fast, tag them later
+- **Today** — daily reading portion with JW Library deep link, streaks,
+  and one-tap prayer sessions
 - **Prayers** — track when you've prayed about each item; mark items
   answered (with a note) or archive them
 - **Scriptures** — save favorite verses by pasting JW Library / wol.jw.org
   share links; one tap reopens them in JW Library
-- **More** — JSON backup export/import
+- **More** — JSON backup export/import, session size
 
-All data lives in IndexedDB on the device — no accounts, no server.
+Sessions deal a hand of least-recently-prayed items, round-robin across
+tags so no category gets forgotten. All data lives in IndexedDB on the
+device — no accounts, no server.
 
 ## Roadmap
 
-- Prayer session mode (rotated hand of least-recently-prayed items)
-- Bible reading plan with daily portion + deep links
 - Trends: calendar heatmap of prayer & reading
 
 ## Development
