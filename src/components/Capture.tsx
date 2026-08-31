@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
+import TagPicker, { toggleIn } from './TagPicker'
 
 export default function Capture() {
   const [text, setText] = useState('')
@@ -15,9 +16,6 @@ export default function Capture() {
     }, []) ?? []
 
   const tagChoices = [...new Set([...existingTags, ...selected])].sort()
-
-  const toggleTag = (t: string) =>
-    setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]))
 
   const addNewTag = () => {
     const t = newTag.trim()
@@ -50,25 +48,15 @@ export default function Capture() {
         onChange={(e) => setText(e.target.value)}
         placeholder="Jot it down now — pray about it later"
       />
-      <div className="chips">
-        {tagChoices.map((t) => (
-          <button
-            key={t}
-            className={selected.includes(t) ? 'chip on' : 'chip'}
-            onClick={() => toggleTag(t)}
-          >
-            {t}
-          </button>
-        ))}
-        <input
-          className="newtag"
-          value={newTag}
-          placeholder="+ tag"
-          onChange={(e) => setNewTag(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && addNewTag()}
-          onBlur={addNewTag}
-        />
-      </div>
+      <TagPicker
+        className="chips"
+        choices={tagChoices}
+        selected={selected}
+        onToggle={(t) => setSelected((s) => toggleIn(s, t))}
+        newTag={newTag}
+        onNewTagChange={setNewTag}
+        onNewTagCommit={addNewTag}
+      />
       <button className="primary" onClick={save} disabled={!text.trim()}>
         Save
       </button>

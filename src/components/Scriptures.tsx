@@ -2,44 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Scripture } from '../db'
 import { finderUrl, formatRef, parseScriptureLink } from '../bible'
-
-function TagPicker({
-  choices,
-  selected,
-  onToggle,
-  newTag,
-  onNewTagChange,
-  onNewTagCommit,
-}: {
-  choices: string[]
-  selected: string[]
-  onToggle: (t: string) => void
-  newTag: string
-  onNewTagChange: (v: string) => void
-  onNewTagCommit: () => void
-}) {
-  return (
-    <div className="chips small">
-      {choices.map((t) => (
-        <button
-          key={t}
-          className={selected.includes(t) ? 'chip on' : 'chip'}
-          onClick={() => onToggle(t)}
-        >
-          {t}
-        </button>
-      ))}
-      <input
-        className="newtag"
-        value={newTag}
-        placeholder="+ tag"
-        onChange={(e) => onNewTagChange(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && onNewTagCommit()}
-        onBlur={onNewTagCommit}
-      />
-    </div>
-  )
-}
+import TagPicker, { toggleIn } from './TagPicker'
 
 export default function Scriptures({
   sharedLink,
@@ -75,9 +38,6 @@ export default function Scriptures({
       onSharedConsumed()
     }
   }, [sharedLink, onSharedConsumed])
-
-  const toggleIn = (list: string[], t: string) =>
-    list.includes(t) ? list.filter((x) => x !== t) : [...list, t]
 
   const commitNewTag = () => {
     const t = newTag.trim()

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type PrayerItem } from '../db'
+import TagPicker, { toggleIn } from './TagPicker'
 
 type Filter = 'active' | 'answered' | 'archived'
 
@@ -17,11 +18,22 @@ export default function Prayers() {
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [noteFor, setNoteFor] = useState<number | null>(null)
   const [note, setNote] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editText, setEditText] = useState('')
+  const [editTags, setEditTags] = useState<string[]>([])
+  const [editNewTag, setEditNewTag] = useState('')
 
   const items = useLiveQuery(
     () => db.prayerItems.where('status').equals(filter).toArray(),
     [filter],
   )
+
+  // tag choices for editing come from every item, not just the current filter
+  const allTags =
+    useLiveQuery(async () => {
+      const all = await db.prayerItems.toArray()
+      return [...new Set(all.flatMap((i) => i.tags))].sort()
+    }, []) ?? []
 
   const tags = [...new Set((items ?? []).flatMap((i) => i.tags))].sort()
   const shown = (items ?? [])
@@ -50,6 +62,29 @@ export default function Prayers() {
 
   const setStatus = (id: number, status: PrayerItem['status']) =>
     db.prayerItems.update(id, { status })
+
+  const startEdit = (item: PrayerItem) => {
+    setNoteFor(null)
+    setEditingId(item.id)
+    setEditText(item.text)
+    setEditTags(item.tags)
+    setEditNewTag('')
+  }
+
+  const commitEditNewTag = () => {
+    const t = editNewTag.trim()
+    if (t && !editTags.includes(t)) setEditTags((s) => [...s, t])
+    setEditNewTag('')
+  }
+
+  const saveEdit = async () => {
+    if (editingId === null || !editText.trim()) return
+    await db.prayerItems.update(editingId, {
+      text: editText.trim(),
+      tags: editTags,
+    })
+    setEditingId(null)
+  }
 
   const remove = async (id: number) => {
     await db.prayerLogs.where('itemId').equals(id).delete()
@@ -112,7 +147,33 @@ export default function Prayers() {
               </p>
             )}
 
-            {noteFor === item.id ? (
+            {editingId === item.id ? (
+              <div className="editbox">
+                <textarea
+                  rows={3}
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                />
+                <TagPicker
+                  choices={[...new Set([...allTags, ...editTags])].sort()}
+                  selected={editTags}
+                  onToggle={(t) => setEditTags((s) => toggleIn(s, t))}
+                  newTag={editNewTag}
+                  onNewTagChange={setEditNewTag}
+                  onNewTagCommit={commitEditNewTag}
+                />
+                <div className="actions">
+                  <button
+                    className="act"
+                    onClick={saveEdit}
+                    disabled={!editText.trim()}
+                  >
+                    Save
+                  </button>
+                  <button onClick={() => setEditingId(null)}>Cancel</button>
+                </div>
+              </div>
+            ) : noteFor === item.id ? (
               <div className="answer-note">
                 <input
                   autoFocus
@@ -136,6 +197,7 @@ export default function Prayers() {
                     <button onClick={() => setNoteFor(item.id)}>
                       ✓ Answered
                     </button>
+                    <button onClick={() => startEdit(item)}>Edit</button>
                     <button onClick={() => setStatus(item.id, 'archived')}>
                       Archive
                     </button>
@@ -146,6 +208,7 @@ export default function Prayers() {
                     <button onClick={() => setStatus(item.id, 'active')}>
                       Restore
                     </button>
+                    <button onClick={() => startEdit(item)}>Edit</button>
                     <button className="danger" onClick={() => remove(item.id)}>
                       Delete
                     </button>

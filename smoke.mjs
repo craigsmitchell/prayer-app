@@ -41,6 +41,23 @@ console.log(
     : 'NO — ' + JSON.stringify(list.slice(0, 300)),
 )
 
+// edit the item: change its text, keep the old tag, add a new one
+await page.click('button:text-is("Edit")')
+await page.fill('.editbox textarea', 'Test prayer item (edited)')
+await page.fill('.editbox .newtag', 'health')
+await page.keyboard.press('Enter')
+await page.click('.editbox button:text-is("Save")')
+await page.waitForTimeout(300)
+list = await page.evaluate(() => document.body.innerText)
+console.log(
+  'PRAYER EDIT:',
+  list.includes('Test prayer item (edited)') &&
+    list.includes('family') &&
+    list.includes('health')
+    ? 'yes (text changed, tag kept + tag added)'
+    : 'NO — ' + JSON.stringify(list.slice(0, 300)),
+)
+
 // mark prayed, then answered
 await page.click('button:has-text("Prayed")')
 await page.waitForTimeout(300)
